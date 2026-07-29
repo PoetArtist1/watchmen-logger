@@ -10,4 +10,4 @@ coverage/
 .env
 logs/
 dist/
-
+example.js
