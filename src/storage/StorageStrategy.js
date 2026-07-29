@@ -49,6 +49,25 @@ class StorageStrategy {
   }
 
   /**
+   * Persist a captured request/response record.
+   * @deprecated Since v0.1.0. Use {@link StorageStrategy#save} instead.
+   *   `store()` will be removed in the next MAJOR release (v1.0.0).
+   *   See MIGRATION.md for details.
+   * @param {object} record - The captured request data
+   * @returns {Promise<void>}
+   */
+  async store(record) {
+    if (!StorageStrategy._storeWarned) {
+      StorageStrategy._storeWarned = true;
+      console.warn(
+        '[watchmen-logger] DEPRECATION WARNING: store() is deprecated and will be removed in v1.0.0. ' +
+        'Use save() instead. See MIGRATION.md for migration guide.'
+      );
+    }
+    return this.save(record);
+  }
+
+  /**
    * Save a manual log entry (from logInfo, logWarning, logError, logDebug).
    * @param {object} logEntry - The manual log entry
    * @param {string} logEntry.id - Unique log ID
