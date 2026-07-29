@@ -4,7 +4,6 @@
 > Middleware ligero, asíncrono y de cero dependencias externas de infraestructura. Diseñado como alternativa autónoma a Sentry / Datadog para aplicaciones Node.js.
 
 [![Node.js](https://img.shields.io/badge/Node.js->=18.0.0-green.svg)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-100%20passing-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/Coverage->90%25-brightgreen.svg)]()
 
@@ -21,15 +20,34 @@
 
 ---
 
-## 📦 Instalación
+## 📦 Instalación y Uso Local
 
-```bash
-npm install watchmen-logger
+Actualmente el paquete se encuentra en desarrollo local. Puedes utilizarlo en tu proyecto de Node.js de dos formas:
+
+### Opción 1: Importación Directa en el Repositorio
+
+Si estás desarrollando la aplicación dentro del mismo proyecto:
+
+```javascript
+const { createCaptureMiddleware, StorageFactory } = require('./src');
 ```
 
-### Dependencias opcionales de base de datos
-- Para **SQLite**: `better-sqlite3` se incluye en las dependencias.
-- Para **PostgreSQL**: Asegúrate de tener acceso a un servidor PostgreSQL.
+### Opción 2: Enlace Local con `npm link`
+
+Para probar el paquete en otro proyecto local de tu máquina sin publicar en NPM:
+
+1. En la carpeta de `watchmen-logger`:
+   ```bash
+   npm link
+   ```
+2. En la carpeta de tu aplicación de Express:
+   ```bash
+   npm link watchmen-logger
+   ```
+3. Importar en tu aplicación:
+   ```javascript
+   const { createCaptureMiddleware, StorageFactory } = require('watchmen-logger');
+   ```
 
 ---
 
@@ -37,7 +55,7 @@ npm install watchmen-logger
 
 ```javascript
 const express = require('express');
-const { createCaptureMiddleware, StorageFactory } = require('watchmen-logger');
+const { createCaptureMiddleware, StorageFactory } = require('./src'); // O 'watchmen-logger' si usaste npm link
 
 async function bootstrap() {
   const app = express();
@@ -186,9 +204,3 @@ watchmen-logger/
 ├── ARCHITECTURE.md            # Documentación técnica de arquitectura
 └── package.json
 ```
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT.
