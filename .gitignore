@@ -1,0 +1,13 @@
+node_modules/
+coverage/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+.env
+logs/
+dist/
+example.js
