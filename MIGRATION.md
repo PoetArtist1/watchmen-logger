@@ -71,3 +71,32 @@ await storage.save({
 - await storage.store(record);
 + await storage.save(record);
 ```
+
+---
+
+### Deprecated: `log(level, message)` → Use typed methods instead
+
+**Status**: Deprecated in v0.1.0, scheduled for removal in v1.0.0.
+
+**Reason**: Explicit methods (`logInfo`, `logWarning`, `logError`, `logDebug`) are
+clearer at the call site and match RF-05. The generic `log()` helper remains only
+for transitional compatibility.
+
+#### Before (deprecated)
+
+```javascript
+await logger.log('info', 'Server started', { port: 3000 });
+await logger.log('error', 'Payment failed', { orderId: 42 });
+```
+
+#### After (recommended)
+
+```javascript
+await logger.logInfo('Server started', { port: 3000 });
+await logger.logError('Payment failed', null, { orderId: 42 });
+```
+
+#### What happens if I keep using `log()`?
+
+- **v0.1.0**: Still works; emits a one-time `console.warn` per process.
+- **v1.0.0 (planned)**: Removed.

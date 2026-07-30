@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Configuración JSON + `.env` (RF-06):** Módulo `src/config/` que carga
+  `logger.config.json`, inyecta secretos desde `.env`, resuelve placeholders
+  `${VAR_NAME}` y valida tipos/enums/dependencias al arranque. Incluye
+  `.env.example` y `logger.config.example.json`.
+- **API de logging manual (RF-05):** `createLogger()` / `WatchmenLogger` con
+  `logInfo`, `logWarning`, `logError` y `logDebug`, persistiendo en
+  `manual_logs` vía `storage.saveLog()`.
+- **Utilidades (RF-01):** Generación de UUID v4 (`crypto.randomUUID`),
+  timestamps ISO 8601 y enmascaramiento de datos sensibles (passwords,
+  cookies, headers).
+- **Instalación base (RF-01):** Campo `files` en `package.json` para publicación
+  limpia en NPM; defaults out-of-the-box cuando no existe config file
+  (estrategia `memory` + SQLite embebido disponible).
 - **Middleware de captura automática (RF-02):** Express middleware que intercepta
   requests y responses, capturando timestamp, método HTTP, URL completa, headers,
   query params, body, IP del cliente, user agent, status code, latencia, tamaño
@@ -39,9 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   manual (RF-05). Almacenamiento y consulta con filtros y paginación.
 - **Enmascaramiento de headers sensibles:** Headers como `authorization` y
   `cookie` se reemplazan por `[REDACTED]` automáticamente.
-- **Tests unitarios con Vitest:** 100 tests cubriendo storage (MemoryStorage,
-  SqliteStorage, StorageFactory), middleware, y MigrationRunner. Cobertura >70%
-  en módulos core.
+- **Tests unitarios con Vitest:** Suite cubriendo storage (MemoryStorage,
+  SqliteStorage, StorageFactory), middleware, MigrationRunner, config, utils
+  y API de logging manual. Cobertura >70% en módulos core.
 - **Esquemas SQL:** Archivos de migración para crear tablas `requests` y
   `manual_logs` con todos los campos e índices requeridos por el PRD.
 
@@ -51,3 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   con convenciones de ORMs. `store()` sigue funcionando pero emite un
   `console.warn` la primera vez que se invoca. Será eliminado en v1.0.0.
   Ver [MIGRATION.md](MIGRATION.md) para la guía de migración.
+- **`log(level, message)` en WatchmenLogger:** Reemplazado por `logInfo` /
+  `logWarning` / `logError` / `logDebug`. Emite `console.warn` una vez por
+  proceso. Será eliminado en v1.0.0. Ver [MIGRATION.md](MIGRATION.md).

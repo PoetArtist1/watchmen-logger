@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "Self-hosted logging & monitoring middleware for REST APIs. Capture, store, and visualize HTTP requests with zero external dependencies.",
   "main": "src/index.js",
+  "files": [
+    "src/",
+    "logger.config.example.json",
+    ".env.example",
+    "README.md",
+    "CHANGELOG.md",
+    "MIGRATION.md",
+    "ARCHITECTURE.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
@@ -15,7 +25,8 @@
     "rest-api",
     "express",
     "http-logger",
-    "dashboard"
+    "dashboard",
+    "sqlite"
   ],
   "author": "",
   "license": "MIT",

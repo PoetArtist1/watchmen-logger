@@ -4,7 +4,7 @@
 > Middleware ligero, asíncrono y de cero dependencias externas de infraestructura. Diseñado como alternativa autónoma a Sentry / Datadog para aplicaciones Node.js.
 
 [![Node.js](https://img.shields.io/badge/Node.js->=18.0.0-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-100%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-134%20passing-brightgreen.svg)]()
 [![Coverage](https://img.shields.io/badge/Coverage->90%25-brightgreen.svg)]()
 
 ---
@@ -12,6 +12,8 @@
 ## 🌟 Características Principales
 
 - **Captura Automática (RF-02):** Intercepta automáticamente todas las peticiones HTTP y respuestas en Express sin bloquear el event loop (latencia añadida < 5ms).
+- **Configuración JSON + `.env` (RF-06):** `logger.config.json` con secretos vía variables `${VAR}` resueltas desde `.env` / entorno del sistema.
+- **Logging Manual (RF-05):** `logInfo`, `logWarning`, `logError`, `logDebug` persistidos en la misma estrategia de storage.
 - **Múltiples Estrategias de Persistencia (RF-04):** Cambia dinámicamente entre almacenamiento en **Memoria RAM** (Buffer circular), **SQLite** (archivo local en modo WAL) y **PostgreSQL** (Pool de conexiones para producción).
 - **Seguridad e Higiene de Datos:** Enmascaramiento automático de cabeceras sensibles (`Authorization`, `Cookie`, `Set-Cookie`) y límite configurable de tamaño de body.
 - **Sistema de Migraciones SQL:** Runner integrado para inicialización automática de esquemas y rollback con scripts `.sql`.
@@ -53,6 +55,38 @@ Para probar el paquete en otro proyecto local de tu máquina sin publicar en NPM
 
 ## 🚀 Inicio Rápido
 
+### Opción recomendada: `createLogger()` (RF-01 / RF-05 / RF-06)
+
+```javascript
+const express = require('express');
+const { createLogger } = require('watchmen-logger'); // o './src' en desarrollo local
+
+async function bootstrap() {
+  const app = express();
+  app.use(express.json());
+
+  // Carga logger.config.json + .env, valida y monta storage
+  const logger = await createLogger();
+  app.use(logger.middleware());
+
+  app.get('/api/users', async (req, res) => {
+    await logger.logInfo('Listing users', { requestId: req.requestId });
+    res.json([{ id: 1, name: 'Alice' }]);
+  });
+
+  app.listen(3000, () => {
+    logger.logInfo('Servidor listo', { port: 3000 });
+  });
+}
+
+bootstrap();
+```
+
+Copia `logger.config.example.json` → `logger.config.json` y `.env.example` → `.env`.
+Los secretos van en `.env` y se referencian en el JSON como `${LOGGER_DB_PASSWORD}`.
+
+### Opción manual: StorageFactory + middleware
+
 ```javascript
 const express = require('express');
 const { createCaptureMiddleware, StorageFactory } = require('./src'); // O 'watchmen-logger' si usaste npm link
@@ -85,6 +119,17 @@ async function bootstrap() {
 }
 
 bootstrap();
+```
+
+---
+
+## 📝 Logging Manual (RF-05)
+
+```javascript
+await logger.logInfo('Evento informativo', { userId: 1 });
+await logger.logWarning('Algo sospechoso', { ip: '1.2.3.4' });
+await logger.logError('Fallo de negocio', new Error('boom'), { orderId: 9 });
+await logger.logDebug('Detalle de depuración');
 ```
 
 ---
@@ -182,6 +227,9 @@ npm run test:coverage
 watchmen-logger/
 ├── src/
 │   ├── index.js               # Punto de entrada principal
+│   ├── Logger.js              # createLogger + API logInfo/Warning/Error/Debug
+│   ├── config/                # Carga JSON, .env y validación (RF-06)
+│   ├── utils/                 # UUID, fechas ISO 8601, masking
 │   ├── middleware/            # Middleware de captura automática (RF-02)
 │   │   ├── captureMiddleware.js
 │   │   └── index.js
@@ -199,6 +247,8 @@ watchmen-logger/
 │       └── index.js
 ├── tests/
 │   └── unit/                  # Tests unitarios con Vitest
+├── logger.config.example.json
+├── .env.example
 ├── CHANGELOG.md               # Registro de cambios (Semantic Versioning)
 ├── MIGRATION.md               # Guía de migración (Deprecaciones)
 ├── ARCHITECTURE.md            # Documentación técnica de arquitectura

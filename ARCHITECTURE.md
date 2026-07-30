@@ -70,6 +70,13 @@ Ubicación: `src/migrations/MigrationRunner.js`
 
 - **Propósito:** Garantizar que las tablas `requests` y `manual_logs` e índices requeridos se creen automáticamente en SQLite/PostgreSQL antes de que la aplicación empiece a recibir peticiones.
 
+### E. Configuración y Bootstrap
+Ubicación: `src/config/` y `src/Logger.js`
+
+- **Propósito:** Cargar `logger.config.json`, inyectar secretos desde `.env` (`${VAR_NAME}`), validar tipos al arranque y exponer la API pública `createLogger()` con `logInfo` / `logWarning` / `logError` / `logDebug`.
+- **Prioridad de secretos:** variables del sistema > archivo `.env` > defaults del JSON.
+- **Utilidades compartidas:** `src/utils/` (UUID v4, ISO 8601, masking de passwords/cookies/headers).
+
 ---
 
 ## 3. Modelo de Datos y Esquema
@@ -126,5 +133,7 @@ En cumplimiento con el requisito **RF-09** de evolución y madurez de código:
 
 - En `v0.1.0`, el método `store()` fue marcado como **@deprecated** en favor de `save()`.
 - Llama internamente a `save()` emitiendo una advertencia única `console.warn` por proceso.
+- En `v0.1.0`, el método genérico `log(level, message)` de `WatchmenLogger` también está
+  **@deprecated** en favor de `logInfo` / `logWarning` / `logError` / `logDebug`.
 - Su eliminación definitiva está programada para la versión mayor `v1.0.0`.
-- Los detalles completos se documentan en [`MIGRATION.md`](file:///c:/Users/carlo/OneDrive/Escritorio/UNIVERSIDAD/componentes/watchmen-logger/MIGRATION.md).
+- Los detalles completos se documentan en [`MIGRATION.md`](./MIGRATION.md).
