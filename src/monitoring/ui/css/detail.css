@@ -1,0 +1,127 @@
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(16, 34, 36, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: flex-end;
+  animation: rise-in 220ms var(--ease) both;
+}
+
+.drawer {
+  width: min(560px, 100%);
+  height: 100%;
+  background: #fffdf8;
+  border-left: 1px solid var(--ink);
+  box-shadow: -12px 0 0 rgba(16, 34, 36, 0.08);
+  overflow: auto;
+  padding: 1.25rem 1.25rem 2rem;
+  animation: sweep 360ms var(--ease) both;
+}
+
+.drawer__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.drawer__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.drawer__id {
+  margin: 0.35rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  word-break: break-all;
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.kv {
+  border: 1px solid var(--line);
+  padding: 0.65rem 0.75rem;
+  background: rgba(242, 235, 224, 0.35);
+}
+
+.kv__k {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 0.3rem;
+}
+
+.kv__v {
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.section {
+  margin-top: 1.15rem;
+}
+
+.section h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.pair-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.pair-table th,
+.pair-table td {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.pair-table th {
+  width: 36%;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.codeblock {
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--line-strong);
+  background: #102224;
+  color: #e8ffe9;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow: auto;
+  max-height: 260px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .kv-grid {
+    grid-template-columns: 1fr;
+  }
+}

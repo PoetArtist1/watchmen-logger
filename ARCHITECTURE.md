@@ -76,6 +76,30 @@ Ubicación: `src/config/` y `src/Logger.js`
 - **Propósito:** Cargar `logger.config.json`, inyectar secretos desde `.env` (`${VAR_NAME}`), validar tipos al arranque y exponer la API pública `createLogger()` con `logInfo` / `logWarning` / `logError` / `logDebug`.
 - **Prioridad de secretos:** variables del sistema > archivo `.env` > defaults del JSON.
 - **Utilidades compartidas:** `src/utils/` (UUID v4, ISO 8601, masking de passwords/cookies/headers).
+- **Montaje Express:** `logger.attach(app)` registra captura + router de monitoreo; `logger.monitoring()` expone solo la UI/API del RF-03.
+
+### F. Monitoring UI (Signal Desk) — RF-03
+Ubicación: `src/monitoring/`
+
+- **Propósito:** Exponer una SPA embebida y APIs JSON para visualizar requests capturadas y métricas agregadas, sin build process y con peso objetivo &lt; 500KB (CDN para Chart.js / fuentes).
+- **Router:** `createMonitoringRouter(storage, monitoringConfig)` monta:
+  - `GET /` → shell HTML con `<base href>` inyectado
+  - `GET /metrics` → métricas (+ cache TTL opcional)
+  - `GET /requests` → lista con filtros y paginación por cursor
+  - `GET /requests/:id` → detalle
+  - `POST /auth/login|logout`, `GET /auth/me` → sesión cookie HMAC si `auth.enabled`
+  - `GET /assets/*` → CSS/JS de la SPA
+- **UI:** componentes Vanilla ES modules bajo `src/monitoring/ui/js/components/` (shell, dashboard, requestList, requestDetail, login, charts) y estilos en `ui/css/`.
+- **Aislamiento:** `logger.middleware()` excluye automáticamente el prefijo del endpoint de monitoring (`/api/monitoring*`) para no auto-loguear la UI.
+
+```
+   [ Browser ] ──GET /api/monitoring/──► createMonitoringRouter
+                        │
+                        ├── /assets/*  (SPA estática)
+                        ├── /metrics   ──► storage.getMetrics() (+ enrich timeline)
+                        ├── /requests  ──► storage.findAll(filters, cursor)
+                        └── /requests/:id ► storage.findById(id)
+```
 
 ---
 

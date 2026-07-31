@@ -4,8 +4,8 @@
 > Middleware ligero, asíncrono y de cero dependencias externas de infraestructura. Diseñado como alternativa autónoma a Sentry / Datadog para aplicaciones Node.js.
 
 [![Node.js](https://img.shields.io/badge/Node.js->=18.0.0-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-134%20passing-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/Coverage->90%25-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-139%2B%20passing-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage->70%25-brightgreen.svg)]()
 
 ---
 
@@ -19,6 +19,7 @@
 - **Sistema de Migraciones SQL:** Runner integrado para inicialización automática de esquemas y rollback con scripts `.sql`.
 - **Métricas y Análisis:** Cálculo automático de métricas de rendimiento (promedio, min, max, p50, p95, p99), tasa de peticiones por minuto, y endpoints con más errores.
 - **Paginación por Cursor:** Consultas eficientes y escalables con filtros combinables por método, estado HTTP, ruta, rango de fechas y latencia.
+- **Interface Web / Signal Desk (RF-03):** SPA embebida en `/api/monitoring` con dashboard, lista filtrable, detalle de request y login opcional.
 
 ---
 
@@ -67,7 +68,12 @@ async function bootstrap() {
 
   // Carga logger.config.json + .env, valida y monta storage
   const logger = await createLogger();
-  app.use(logger.middleware());
+
+  // Captura HTTP + monta la UI de monitoreo (RF-03)
+  logger.attach(app);
+  // Equivalente:
+  // app.use(logger.middleware());
+  // app.use(logger.config.monitoring.endpoint, logger.monitoring());
 
   app.get('/api/users', async (req, res) => {
     await logger.logInfo('Listing users', { requestId: req.requestId });
@@ -76,6 +82,7 @@ async function bootstrap() {
 
   app.listen(3000, () => {
     logger.logInfo('Servidor listo', { port: 3000 });
+    // UI: http://localhost:3000/api/monitoring/
   });
 }
 
@@ -119,6 +126,51 @@ async function bootstrap() {
 }
 
 bootstrap();
+```
+
+---
+
+## 📡 Monitoring UI — Signal Desk (RF-03)
+
+El paquete incluye una SPA embebida (HTML/CSS/JS, sin build) servida bajo el endpoint configurado en `monitoring.endpoint` (por defecto `/api/monitoring`).
+
+### Demo local
+
+```bash
+npm install
+npm run demo
+# → http://localhost:3847/api/monitoring/
+```
+
+### Endpoints
+
+| Ruta | Descripción |
+|------|-------------|
+| `GET /api/monitoring/` | SPA (dashboard, lista, detalle, login) |
+| `GET /api/monitoring/metrics` | Métricas agregadas (JSON) |
+| `GET /api/monitoring/requests` | Lista con paginación por cursor + filtros |
+| `GET /api/monitoring/requests/:id` | Detalle de una request |
+
+### Dashboard
+
+Muestra total de requests, tasa/min, errores, uptime/latencia, gráficos de método/status/timeline, top endpoints, endpoints lentos y errores recientes (auto-refresh configurable y pausable).
+
+### Auth opcional
+
+En `logger.config.json`:
+
+```json
+"monitoring": {
+  "endpoint": "/api/monitoring",
+  "enabled": true,
+  "auto_refresh_interval": 30,
+  "auth": {
+    "enabled": true,
+    "username": "${LOGGER_MONITORING_USER}",
+    "password": "${LOGGER_MONITORING_PASSWORD}",
+    "session_timeout_hours": 1
+  }
+}
 ```
 
 ---
@@ -201,23 +253,15 @@ const storage = StorageFactory.create({
 
 ---
 
-## 🧪 Pruebas Unitarias
+## 🧪 Pruebas
 
-El proyecto cuenta con una suite completa de pruebas unitarias escritas en [Vitest](https://vitest.dev/).
+Ver estrategia completa en [`TESTING.md`](./TESTING.md).
 
 ```bash
-# Ejecutar todas las pruebas unitarias
-npm test
-
-# Ejecutar reporte de cobertura de código
-npm run test:coverage
+npm test              # Vitest (unitario + API monitoring)
+npm run test:coverage # Cobertura
+npm run test:ui       # Playwright — UI real del Signal Desk
 ```
-
-**Resultado de Cobertura:**
-- **Statements:** > 92%
-- **Branches:** > 70%
-- **Functions:** > 79%
-- **Lines:** > 92%
 
 ---
 
@@ -231,26 +275,22 @@ watchmen-logger/
 │   ├── config/                # Carga JSON, .env y validación (RF-06)
 │   ├── utils/                 # UUID, fechas ISO 8601, masking
 │   ├── middleware/            # Middleware de captura automática (RF-02)
-│   │   ├── captureMiddleware.js
-│   │   └── index.js
+│   ├── monitoring/            # UI Signal Desk + APIs de métricas (RF-03)
+│   │   ├── createMonitoringRouter.js
+│   │   ├── auth.js
+│   │   └── ui/                # SPA HTML/CSS/JS (componentes)
 │   ├── storage/               # Estrategias de almacenamiento (RF-04)
-│   │   ├── StorageStrategy.js # Interface base abstracta
-│   │   ├── StorageFactory.js  # Factory de estrategias
-│   │   ├── MemoryStorage.js   # Buffer circular en RAM
-│   │   ├── SqliteStorage.js   # Persistencia SQLite
-│   │   ├── PostgresStorage.js # Persistencia PostgreSQL
-│   │   └── index.js
 │   └── migrations/            # Runner de migraciones SQL
-│       ├── MigrationRunner.js
-│       ├── 001_create_requests_table.sql
-│       ├── 002_create_manual_logs_table.sql
-│       └── index.js
+├── examples/
+│   └── demo-server.js         # Demo con UI en :3847
 ├── tests/
-│   └── unit/                  # Tests unitarios con Vitest
+│   ├── unit/                  # Vitest
+│   └── ui/                    # Playwright (UI monitoring)
 ├── logger.config.example.json
 ├── .env.example
-├── CHANGELOG.md               # Registro de cambios (Semantic Versioning)
-├── MIGRATION.md               # Guía de migración (Deprecaciones)
-├── ARCHITECTURE.md            # Documentación técnica de arquitectura
+├── TESTING.md
+├── CHANGELOG.md
+├── MIGRATION.md
+├── ARCHITECTURE.md
 └── package.json
 ```

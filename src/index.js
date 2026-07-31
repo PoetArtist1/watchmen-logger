@@ -42,12 +42,24 @@ const {
   REDACTED
 } = require('./utils');
 const { WatchmenLogger, createLogger, LOG_LEVELS } = require('./Logger');
+const {
+  createMonitoringRouter,
+  createAuthHandlers,
+  createMetricsCache,
+  enrichMetrics
+} = require('./monitoring');
 
 module.exports = {
   // High-level API (RF-01 / RF-05 / RF-06)
   createLogger,
   WatchmenLogger,
   LOG_LEVELS,
+
+  // Monitoring UI + APIs (RF-03)
+  createMonitoringRouter,
+  createAuthHandlers,
+  createMetricsCache,
+  enrichMetrics,
 
   // Middleware
   createCaptureMiddleware,

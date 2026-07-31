@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Interface web de monitoreo (RF-03):** SPA embebida en `src/monitoring/ui`
+  ("Signal Desk") con dashboard, lista filtrable, detalle y login; endpoints
+  `/api/monitoring`, `/metrics`, `/requests`, `/requests/:id`; paginación por
+  cursor; auth por cookie HMAC; `logger.monitoring()` / `logger.attach(app)` y
+  demo `npm run demo`.
 - **Configuración JSON + `.env` (RF-06):** Módulo `src/config/` que carga
   `logger.config.json`, inyecta secretos desde `.env`, resuelve placeholders
   `${VAR_NAME}` y valida tipos/enums/dependencias al arranque. Incluye

@@ -6,6 +6,7 @@
 const { loadConfig } = require('./config');
 const { StorageFactory } = require('./storage');
 const { createCaptureMiddleware } = require('./middleware');
+const { createMonitoringRouter } = require('./monitoring');
 const { generateUuid, nowISO8601, maskSensitiveData } = require('./utils');
 
 const LOG_LEVELS = Object.freeze({
@@ -59,11 +60,61 @@ class WatchmenLogger {
 
   /**
    * Create Express capture middleware bound to this logger's storage and capture config.
+   * Automatically excludes the monitoring endpoint prefix so the UI does not log itself.
    * @returns {Function} Express middleware
    */
   middleware() {
     this._assertOpen();
-    return createCaptureMiddleware(this.storage, this.config.capture);
+    const capture = { ...(this.config.capture || {}) };
+    const monitorPath = (this.config.monitoring?.endpoint || '/api/monitoring').replace(/\/+$/, '');
+    const excluded = new Set([
+      ...(capture.excluded_paths || []),
+      monitorPath,
+      `${monitorPath}/`,
+      `${monitorPath}*` // prefix match for SPA + API under the mount
+    ]);
+    capture.excluded_paths = [...excluded];
+    return createCaptureMiddleware(this.storage, capture);
+  }
+
+  /**
+   * Create Express router for the monitoring SPA + JSON APIs (RF-03).
+   * Mount with: `app.use(logger.config.monitoring.endpoint, logger.monitoring())`
+   * or simply `app.use(logger.monitoring())` when using the default endpoint via mount helper.
+   * @returns {import('express').Router|Function}
+   */
+  monitoring() {
+    this._assertOpen();
+    const monitoring = this.config.monitoring || {};
+    if (monitoring.enabled === false) {
+      const disabled = (req, res) => {
+        res.status(404).json({ error: 'Monitoring UI is disabled' });
+      };
+      disabled.mountPath = monitoring.endpoint || '/api/monitoring';
+      return disabled;
+    }
+    const router = createMonitoringRouter(this.storage, monitoring);
+    router.mountPath = monitoring.endpoint || '/api/monitoring';
+    return router;
+  }
+
+  /**
+   * Convenience: mount capture + monitoring on an Express app.
+   * @param {import('express').Application} app
+   * @returns {WatchmenLogger}
+   */
+  attach(app) {
+    this._assertOpen();
+    if (!app || typeof app.use !== 'function') {
+      throw new TypeError('[watchmen-logger] attach() expects an Express app');
+    }
+    app.use(this.middleware());
+    const monitoring = this.config.monitoring || {};
+    if (monitoring.enabled !== false) {
+      const endpoint = monitoring.endpoint || '/api/monitoring';
+      app.use(endpoint, this.monitoring());
+    }
+    return this;
   }
 
   /**

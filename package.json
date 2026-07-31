@@ -14,6 +14,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "demo": "node examples/demo-server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
