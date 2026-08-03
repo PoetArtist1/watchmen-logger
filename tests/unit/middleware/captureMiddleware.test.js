@@ -33,7 +33,7 @@ function createMockReq(overrides = {}) {
     },
     query: overrides.query || { page: '1' },
     body: overrides.body || null,
-    socket: { remoteAddress: '127.0.0.1' },
+    socket: { remoteAddress: '127.0.0.1', remotePort: 54321 },
     ...overrides
   };
 }
@@ -130,6 +130,20 @@ describe('captureMiddleware', () => {
 
       const record = mockStorage.save.mock.calls[0][0];
       expect(record.client_ip).toBe('127.0.0.1');
+    });
+
+    it('should capture client_port', async () => {
+      const middleware = createCaptureMiddleware(mockStorage);
+      const req = createMockReq();
+      const res = createMockRes();
+
+      middleware(req, res, () => {});
+      res.end();
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      const record = mockStorage.save.mock.calls[0][0];
+      expect(record.client_port).toBe(54321);
     });
 
     it('should capture full_url', async () => {

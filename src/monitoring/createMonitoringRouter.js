@@ -23,6 +23,22 @@ function parseList(value) {
 }
 
 /**
+ * Browser refresh on SPA routes like /requests must get HTML, while
+ * fetch() from the UI (Accept: application/json) still gets JSON.
+ * @param {import('express').Request} req
+ * @returns {boolean}
+ */
+function wantsHtml(req) {
+  const accept = req.get('Accept') || '';
+  if (accept.includes('application/json') && !accept.includes('text/html')) {
+    return false;
+  }
+  if (req.get('Sec-Fetch-Dest') === 'document') return true;
+  if (accept.includes('text/html')) return true;
+  return false;
+}
+
+/**
  * @param {import('../storage/StorageStrategy')} storage
  * @param {object} monitoringConfig - config.monitoring
  * @returns {import('express').Router}
@@ -57,15 +73,16 @@ function createMonitoringRouter(storage, monitoringConfig = {}) {
   router.get('/auth/me', (req, res) => auth.me(req, res));
 
   // ── Metrics ────────────────────────────────────────────────────────
-  router.get('/metrics', async (_req, res) => {
+  router.get('/metrics', async (req, res) => {
     try {
-      if (cache) {
+      const live = req.query.live === '1' || req.query.live === 'true';
+      if (!live && cache) {
         const hit = cache.get();
         if (hit) return res.json(hit);
       }
       const raw = await storage.getMetrics();
       const metrics = await enrichMetrics(raw, storage);
-      if (cache) cache.set(metrics);
+      if (!live && cache) cache.set(metrics);
       return res.json(metrics);
     } catch (err) {
       console.error('[watchmen-logger] metrics error:', err.message);
@@ -75,10 +92,13 @@ function createMonitoringRouter(storage, monitoringConfig = {}) {
 
   // ── Request list (cursor pagination + filters) ─────────────────────
   router.get('/requests', async (req, res) => {
+    if (wantsHtml(req)) return sendSpa(req, res);
+
     try {
       const q = req.query || {};
       const methods = parseList(q.method);
-      const statusCodes = parseList(q.status_code)?.map(Number);
+      // Keep tokens as strings so groups like "4xx" work (not Number())
+      const statusCodes = parseList(q.status_code);
 
       const filters = {
         method: methods,
@@ -122,6 +142,8 @@ function createMonitoringRouter(storage, monitoringConfig = {}) {
 
   // ── Request detail ─────────────────────────────────────────────────
   router.get('/requests/:id', async (req, res) => {
+    if (wantsHtml(req)) return sendSpa(req, res);
+
     try {
       const record = await storage.findById(req.params.id);
       if (!record) {
@@ -135,20 +157,29 @@ function createMonitoringRouter(storage, monitoringConfig = {}) {
   });
 
   const indexHtmlPath = path.join(uiRoot, 'index.html');
-  let indexTemplate = null;
+  const isDev = process.env.WATCHMEN_DEV === '1' || process.env.NODE_ENV !== 'production';
+  const assetVersion = isDev
+    ? `dev-${Date.now()}`
+    : require('../../package.json').version;
 
   /**
    * Serve SPA with a correct <base href> so relative assets work
    * whether the mount has a trailing slash or not.
+   * Cache-bust asset URLs with ?v= so UI updates are not stuck behind CDN/browser cache.
    */
   function sendSpa(req, res) {
-    if (!indexTemplate) {
-      indexTemplate = fs.readFileSync(indexHtmlPath, 'utf8');
-    }
+    // Always re-read in dev so HTML edits apply without a full process restart
+    const indexTemplate = fs.readFileSync(indexHtmlPath, 'utf8');
     const mount = `${req.baseUrl || ''}/`.replace(/\/{2,}/g, '/');
-    const html = indexTemplate.includes('<base ')
+    let html = indexTemplate.includes('<base ')
       ? indexTemplate
       : indexTemplate.replace('<head>', `<head>\n  <base href="${mount}" />`);
+    const bust = isDev ? `dev-${Date.now()}` : assetVersion;
+    html = html.replace(
+      /(href|src)="(assets\/[^"]+)"/g,
+      (_, attr, assetPath) => `${attr}="${assetPath}?v=${bust}"`
+    );
+    res.setHeader('Cache-Control', 'no-store');
     res.type('html').send(html);
   }
 
@@ -162,7 +193,12 @@ function createMonitoringRouter(storage, monitoringConfig = {}) {
 
   // ── Static SPA assets ──────────────────────────────────────────────
   router.use('/assets', express.static(uiRoot, {
-    maxAge: '1h',
+    maxAge: 0,
+    etag: true,
+    lastModified: true,
+    setHeaders(res) {
+      res.setHeader('Cache-Control', 'no-cache');
+    },
     index: false
   }));
 

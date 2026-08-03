@@ -42,6 +42,19 @@ export function methodClass(method) {
   return `badge badge--${m}`;
 }
 
+/**
+ * Format client address as IP:port (IPv6 → [ip]:port).
+ * @param {string|null|undefined} ip
+ * @param {number|string|null|undefined} port
+ */
+export function formatClientAddress(ip, port) {
+  if (!ip) return '—';
+  const portNum = port == null || port === '' ? null : Number(port);
+  if (!Number.isFinite(portNum) || portNum <= 0) return String(ip);
+  const isIpv6 = String(ip).includes(':') && !String(ip).startsWith('[');
+  return isIpv6 ? `[${ip}]:${portNum}` : `${ip}:${portNum}`;
+}
+
 export function prettyJson(value) {
   if (value == null || value === '') return '—';
   if (typeof value === 'string') {

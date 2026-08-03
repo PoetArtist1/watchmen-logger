@@ -169,8 +169,8 @@ class WatchmenLogger {
   }
 
   /**
-   * @deprecated Since v0.1.0. Use logInfo / logWarning / logError / logDebug instead.
-   *   Will be removed in v1.0.0. See MIGRATION.md.
+   * @deprecated Since v1.0.0. Use logInfo / logWarning / logError / logDebug instead.
+   *   Will be removed in v2.0.0. See MIGRATION.md.
    * @param {string} level
    * @param {string} message
    * @param {object} [metadata]
@@ -180,7 +180,7 @@ class WatchmenLogger {
     if (!WatchmenLogger._logWarned) {
       WatchmenLogger._logWarned = true;
       console.warn(
-        '[watchmen-logger] DEPRECATION WARNING: log(level, message) is deprecated and will be removed in v1.0.0. '
+        '[watchmen-logger] DEPRECATION WARNING: log(level, message) is deprecated and will be removed in v2.0.0. '
         + 'Use logInfo / logWarning / logError / logDebug instead. See MIGRATION.md.'
       );
     }

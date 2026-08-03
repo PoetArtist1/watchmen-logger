@@ -40,7 +40,10 @@ export const api = {
       body: JSON.stringify({ username, password })
     }),
   logout: () => request('/auth/logout', { method: 'POST' }),
-  metrics: () => request('/metrics'),
+  metrics: (opts = {}) => {
+    const qs = opts.live ? '?live=1' : '';
+    return request(`/metrics${qs}`);
+  },
   requests: (params = {}) => {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {

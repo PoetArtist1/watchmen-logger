@@ -155,9 +155,9 @@ Almacena los eventos generados manualmente por el desarrollador (`logInfo`, `log
 
 En cumplimiento con el requisito **RF-09** de evolución y madurez de código:
 
-- En `v0.1.0`, el método `store()` fue marcado como **@deprecated** en favor de `save()`.
+- En `v1.0.0`, el método `store()` fue marcado como **@deprecated** en favor de `save()`.
 - Llama internamente a `save()` emitiendo una advertencia única `console.warn` por proceso.
-- En `v0.1.0`, el método genérico `log(level, message)` de `WatchmenLogger` también está
+- En `v1.0.0`, el método genérico `log(level, message)` de `WatchmenLogger` también está
   **@deprecated** en favor de `logInfo` / `logWarning` / `logError` / `logDebug`.
-- Su eliminación definitiva está programada para la versión mayor `v1.0.0`.
+- Su eliminación definitiva está programada para la versión mayor **`v2.0.0`**.
 - Los detalles completos se documentan en [`MIGRATION.md`](./MIGRATION.md).

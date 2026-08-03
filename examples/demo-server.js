@@ -21,7 +21,8 @@ async function main() {
           monitoring: {
             enabled: true,
             endpoint: '/api/monitoring',
-            auto_refresh_interval: 10,
+            auto_refresh_interval: 5,
+            cache_metrics: false,
             auth: { enabled: false }
           }
         }
@@ -61,7 +62,9 @@ async function main() {
   });
 
   app.listen(PORT, async () => {
-    console.log(`\n  watchmen demo → http://localhost:${PORT}/api/monitoring/\n`);
+    console.log(`\n  watchmen demo`);
+    console.log(`  UI  → http://localhost:${PORT}/api/monitoring/`);
+    console.log(`  (abre esa URL — no /requests directo; eso es JSON de la API)\n`);
     // Seed a bit of traffic so the dashboard is not empty
     const base = `http://127.0.0.1:${PORT}`;
     const paths = [

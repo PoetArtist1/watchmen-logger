@@ -109,9 +109,9 @@ class PostgresStorage extends StorageStrategy {
     const sql = `
       INSERT INTO requests (
         request_id, timestamp, method, path, full_url, status_code, latency_ms,
-        client_ip, user_agent, request_headers, request_query, request_body,
+        client_ip, client_port, user_agent, request_headers, request_query, request_body,
         response_headers, response_body, response_size_bytes, error_message, stack_trace
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
     `;
 
     const values = [
@@ -123,6 +123,7 @@ class PostgresStorage extends StorageStrategy {
       record.status_code,
       record.latency_ms,
       record.client_ip || null,
+      record.client_port != null ? Number(record.client_port) : null,
       record.user_agent || null,
       record.request_headers ? JSON.stringify(record.request_headers) : null,
       record.request_query ? JSON.stringify(record.request_query) : null,
@@ -194,9 +195,21 @@ class PostgresStorage extends StorageStrategy {
 
     if (filters.status_code) {
       const codes = Array.isArray(filters.status_code) ? filters.status_code : [filters.status_code];
-      const placeholders = codes.map(() => `$${paramIndex++}`);
-      conditions.push(`status_code IN (${placeholders.join(', ')})`);
-      params.push(...codes.map(Number));
+      const parts = [];
+      for (const c of codes) {
+        const token = String(c).trim().toLowerCase();
+        if (/^[2-5]xx$/.test(token)) {
+          const base = Number(token[0]) * 100;
+          parts.push(`(status_code >= $${paramIndex++} AND status_code <= $${paramIndex++})`);
+          params.push(base, base + 99);
+        } else {
+          parts.push(`status_code = $${paramIndex++}`);
+          params.push(Number(c));
+        }
+      }
+      if (parts.length) {
+        conditions.push(`(${parts.join(' OR ')})`);
+      }
     }
 
     if (filters.path) {

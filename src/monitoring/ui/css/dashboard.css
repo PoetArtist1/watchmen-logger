@@ -206,6 +206,16 @@
   border: 1px dashed var(--line-strong);
 }
 
+.metric-block__value.is-live-tick {
+  animation: live-tick 420ms var(--ease);
+}
+
+@keyframes live-tick {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(-2px); color: var(--teal-bright); }
+  100% { transform: translateY(0); }
+}
+
 @media (max-width: 1100px) {
   .metrics-strip {
     grid-template-columns: 1fr 1fr;

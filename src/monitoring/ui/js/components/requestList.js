@@ -1,10 +1,122 @@
 import {
   escapeHtml,
+  formatClientAddress,
   formatTime,
   methodClass,
   navigate,
   statusClass
 } from '../utils.js';
+
+function rowHtml(row) {
+  return `
+    <tr data-id="${escapeHtml(row.request_id)}">
+      <td class="mono" style="font-size:.78rem">${escapeHtml(formatTime(row.timestamp))}</td>
+      <td><span class="${methodClass(row.method)}">${escapeHtml(row.method)}</span></td>
+      <td class="mono" style="font-size:.8rem">${escapeHtml(row.path)}</td>
+      <td class="${statusClass(row.status_code)}">${escapeHtml(row.status_code)}</td>
+      <td class="mono">${escapeHtml(row.latency_ms ?? 0)} ms</td>
+      <td class="mono muted" style="font-size:.75rem">${escapeHtml(formatClientAddress(row.client_ip, row.client_port))}</td>
+    </tr>
+  `;
+}
+
+function tbodyHtml(rows) {
+  if (!(rows || []).length) {
+    return `<tr><td colspan="6"><div class="empty">No hay requests con estos filtros</div></td></tr>`;
+  }
+  return rows.map(rowHtml).join('');
+}
+
+function pagerInfo(pagination) {
+  return `${pagination?.total_count ?? 0} total${pagination?.has_more ? ' · hay más' : ''}`;
+}
+
+function methodOptions(selected) {
+  const methods = ['', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+  return methods.map((m) => `
+    <option value="${m}" ${selected === m ? 'selected' : ''}>${m || 'Todos'}</option>
+  `).join('');
+}
+
+function statusOptions(selected) {
+  const options = [
+    { value: '', label: 'Todos' },
+    { value: '2xx', label: '2xx · Éxito' },
+    { value: '3xx', label: '3xx · Redirect' },
+    { value: '4xx', label: '4xx · Cliente' },
+    { value: '5xx', label: '5xx · Servidor' },
+    { value: '200', label: '200 OK' },
+    { value: '201', label: '201 Created' },
+    { value: '204', label: '204 No Content' },
+    { value: '301', label: '301 Moved' },
+    { value: '302', label: '302 Found' },
+    { value: '400', label: '400 Bad Request' },
+    { value: '401', label: '401 Unauthorized' },
+    { value: '403', label: '403 Forbidden' },
+    { value: '404', label: '404 Not Found' },
+    { value: '422', label: '422 Unprocessable' },
+    { value: '500', label: '500 Internal Error' },
+    { value: '502', label: '502 Bad Gateway' },
+    { value: '503', label: '503 Unavailable' }
+  ];
+  return options.map((o) => `
+    <option value="${o.value}" ${String(selected || '') === o.value ? 'selected' : ''}>${o.label}</option>
+  `).join('');
+}
+
+function bindRowClicks(root) {
+  root.querySelectorAll('tr[data-id]').forEach((tr) => {
+    tr.addEventListener('click', () => navigate(`/requests/${tr.getAttribute('data-id')}`));
+  });
+}
+
+function bindPager(root, { onNext, onPrev }) {
+  root.querySelector('[data-next]')?.addEventListener('click', onNext);
+  root.querySelector('[data-prev]')?.addEventListener('click', onPrev);
+}
+
+/**
+ * Patch table + pager without remounting the filter form (no flash).
+ */
+export function updateRequestList(root, {
+  rows,
+  pagination,
+  canPrev,
+  filters,
+  syncFilters = false
+}) {
+  const section = root.querySelector('[data-request-list]');
+  if (!section) return false;
+
+  const tbody = root.querySelector('[data-m="tbody"]');
+  if (tbody) {
+    tbody.innerHTML = tbodyHtml(rows);
+    bindRowClicks(tbody);
+  }
+
+  const info = root.querySelector('[data-m="pager-info"]');
+  if (info) info.textContent = pagerInfo(pagination);
+
+  const prev = root.querySelector('[data-prev]');
+  const next = root.querySelector('[data-next]');
+  if (prev) prev.disabled = !canPrev;
+  if (next) next.disabled = !pagination?.has_more;
+
+  if (syncFilters) {
+    const form = root.querySelector('#filters-form');
+    if (form) {
+      form.search.value = filters.search || '';
+      form.method.value = filters.method || '';
+      form.status_code.value = filters.status_code || '';
+      form.path.value = filters.path || '';
+      form.min_latency.value = filters.min_latency || '';
+      form.max_latency.value = filters.max_latency || '';
+      form.has_error.value = filters.has_error ? 'true' : 'false';
+    }
+  }
+
+  return true;
+}
 
 export function renderRequestList(root, {
   rows,
@@ -16,7 +128,7 @@ export function renderRequestList(root, {
   canPrev
 }) {
   root.innerHTML = `
-    <section>
+    <section data-request-list>
       <form class="filters" id="filters-form">
         <div class="field field--wide">
           <label for="search">Buscar path / id</label>
@@ -30,11 +142,13 @@ export function renderRequestList(root, {
         </div>
         <div class="field">
           <label for="status_code">Status</label>
-          <input id="status_code" name="status_code" value="${escapeHtml(filters.status_code)}" placeholder="404,500" />
+          <select id="status_code" name="status_code">
+            ${statusOptions(filters.status_code)}
+          </select>
         </div>
         <div class="field">
           <label for="path">Path</label>
-          <input id="path" name="path" value="${escapeHtml(filters.path)}" placeholder="/api" />
+          <input id="path" name="path" value="${escapeHtml(filters.path)}" placeholder="ej. users" />
         </div>
         <div class="field">
           <label for="min_latency">Lat min</label>
@@ -66,21 +180,18 @@ export function renderRequestList(root, {
               <th>Path</th>
               <th>Status</th>
               <th>Latency</th>
-              <th>IP</th>
+              <th>IP:Puerto</th>
             </tr>
           </thead>
-          <tbody>
-            ${(rows || []).length ? rows.map(rowHtml).join('') : `
-              <tr><td colspan="6"><div class="empty">No hay requests con estos filtros</div></td></tr>
-            `}
+          <tbody data-m="tbody">
+            ${tbodyHtml(rows)}
           </tbody>
         </table>
       </div>
 
       <div class="pager">
-        <span class="pager__info">
-          ${escapeHtml(pagination?.total_count ?? 0)} total
-          ${pagination?.has_more ? ' · hay más' : ''}
+        <span class="pager__info" data-m="pager-info">
+          ${escapeHtml(pagerInfo(pagination))}
         </span>
         <div style="display:flex;gap:.5rem">
           <button class="btn btn--ghost" type="button" data-prev ${canPrev ? '' : 'disabled'}>Anterior</button>
@@ -104,43 +215,28 @@ export function renderRequestList(root, {
       has_error: String(fd.get('has_error')) === 'true'
     });
   });
-  form.addEventListener('reset', () => {
-    setTimeout(() => {
-      onApplyFilters({
-        search: '',
-        method: '',
-        status_code: '',
-        path: '',
-        min_latency: '',
-        max_latency: '',
-        has_error: false
-      });
-    }, 0);
+  form.addEventListener('reset', (e) => {
+    e.preventDefault();
+    form.reset();
+    // Force empty selects after native-like clear
+    form.search.value = '';
+    form.method.value = '';
+    form.status_code.value = '';
+    form.path.value = '';
+    form.min_latency.value = '';
+    form.max_latency.value = '';
+    form.has_error.value = 'false';
+    onApplyFilters({
+      search: '',
+      method: '',
+      status_code: '',
+      path: '',
+      min_latency: '',
+      max_latency: '',
+      has_error: false
+    });
   });
 
-  root.querySelector('[data-next]')?.addEventListener('click', onNext);
-  root.querySelector('[data-prev]')?.addEventListener('click', onPrev);
-  root.querySelectorAll('[data-id]').forEach((tr) => {
-    tr.addEventListener('click', () => navigate(`/requests/${tr.getAttribute('data-id')}`));
-  });
-}
-
-function rowHtml(row) {
-  return `
-    <tr data-id="${escapeHtml(row.request_id)}">
-      <td class="mono" style="font-size:.78rem">${escapeHtml(formatTime(row.timestamp))}</td>
-      <td><span class="${methodClass(row.method)}">${escapeHtml(row.method)}</span></td>
-      <td class="mono" style="font-size:.8rem">${escapeHtml(row.path)}</td>
-      <td class="${statusClass(row.status_code)}">${escapeHtml(row.status_code)}</td>
-      <td class="mono">${escapeHtml(row.latency_ms ?? 0)} ms</td>
-      <td class="mono muted" style="font-size:.75rem">${escapeHtml(row.client_ip || '—')}</td>
-    </tr>
-  `;
-}
-
-function methodOptions(selected) {
-  const methods = ['', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
-  return methods.map((m) => `
-    <option value="${m}" ${selected === m ? 'selected' : ''}>${m || 'Todos'}</option>
-  `).join('');
+  bindPager(root, { onNext, onPrev });
+  bindRowClicks(root.querySelector('[data-m="tbody"]'));
 }

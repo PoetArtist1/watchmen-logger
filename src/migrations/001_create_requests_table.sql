@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS requests (
     status_code INTEGER NOT NULL,
     latency_ms INTEGER NOT NULL,
     client_ip VARCHAR(45),
+    client_port INTEGER,
     user_agent TEXT,
     request_headers JSONB,
     request_query JSONB,

@@ -23,7 +23,7 @@ export function renderShell(root, { route, version, autoRefresh, onToggleRefresh
           <a href="#" class="rail__link ${activeList ? 'is-active' : ''}" data-nav="/requests" title="Requests">${icons.list}</a>
           ${authEnabled ? `<button class="rail__link" data-logout title="Logout">${icons.out}</button>` : ''}
         </nav>
-        <div class="rail__meta">v${escapeHtml(version || '0.1.0')}</div>
+        <div class="rail__meta">v${escapeHtml(version || '1.0.0')}</div>
       </aside>
       <main class="stage">
         <header class="topbar">

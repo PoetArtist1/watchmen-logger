@@ -32,8 +32,9 @@ class StorageStrategy {
    * @param {string} record.full_url - Full request URL
    * @param {number} record.status_code - HTTP status code
    * @param {number} record.latency_ms - Response time in milliseconds
-   * @param {string} [record.client_ip] - Client IP address
-   * @param {string} [record.user_agent] - Client user agent
+ * @param {string} [record.client_ip] - Client IP address
+ * @param {number} [record.client_port] - Client TCP port
+ * @param {string} [record.user_agent] - Client user agent
    * @param {object} [record.request_headers] - Request headers
    * @param {object} [record.request_query] - Query parameters
    * @param {*} [record.request_body] - Request body
@@ -50,8 +51,8 @@ class StorageStrategy {
 
   /**
    * Persist a captured request/response record.
-   * @deprecated Since v0.1.0. Use {@link StorageStrategy#save} instead.
-   *   `store()` will be removed in the next MAJOR release (v1.0.0).
+   * @deprecated Since v1.0.0. Use {@link StorageStrategy#save} instead.
+   *   `store()` will be removed in the next MAJOR release (v2.0.0).
    *   See MIGRATION.md for details.
    * @param {object} record - The captured request data
    * @returns {Promise<void>}
@@ -60,7 +61,7 @@ class StorageStrategy {
     if (!StorageStrategy._storeWarned) {
       StorageStrategy._storeWarned = true;
       console.warn(
-        '[watchmen-logger] DEPRECATION WARNING: store() is deprecated and will be removed in v1.0.0. ' +
+        '[watchmen-logger] DEPRECATION WARNING: store() is deprecated and will be removed in v2.0.0. ' +
         'Use save() instead. See MIGRATION.md for migration guide.'
       );
     }

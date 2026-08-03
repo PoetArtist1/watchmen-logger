@@ -6,6 +6,8 @@ const express = require('express');
 const { MemoryStorage } = require('../../../src/storage');
 const { createMonitoringRouter } = require('../../../src/monitoring');
 
+const JSON_HEADERS = { Accept: 'application/json' };
+
 async function withServer(storage, monitoringConfig, seed) {
   if (seed) await seed(storage);
   const app = express();
@@ -60,7 +62,7 @@ describe('monitoring router (RF-03)', () => {
       });
     });
 
-    const res = await fetch(`${base}/metrics`);
+    const res = await fetch(`${base}/metrics`, { headers: JSON_HEADERS });
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.requests.total).toBe(1);
@@ -87,15 +89,32 @@ describe('monitoring router (RF-03)', () => {
       }
     });
 
-    const page1 = await (await fetch(`${base}/requests?limit=2`)).json();
+    const res = await fetch(`${base}/requests?limit=2`, { headers: JSON_HEADERS });
+    const page1 = await res.json();
     expect(page1.data).toHaveLength(2);
     expect(page1.pagination.has_more).toBe(true);
     expect(page1.pagination.next_cursor).toBeTruthy();
 
     const page2 = await (await fetch(
-      `${base}/requests?limit=2&cursor=${encodeURIComponent(page1.pagination.next_cursor)}`
+      `${base}/requests?limit=2&cursor=${encodeURIComponent(page1.pagination.next_cursor)}`,
+      { headers: JSON_HEADERS }
     )).json();
     expect(page2.data.length).toBeGreaterThanOrEqual(1);
+    await close();
+  });
+
+  it('serves SPA HTML when browser refreshes /requests', async () => {
+    const { base, close } = await withServer(storage, { auth: { enabled: false } });
+    const res = await fetch(`${base}/requests`, {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml',
+        'Sec-Fetch-Dest': 'document'
+      }
+    });
+    const html = await res.text();
+    expect(res.status).toBe(200);
+    expect(html).toContain('watchmen');
+    expect(html).toContain('<base href=');
     await close();
   });
 
@@ -114,7 +133,7 @@ describe('monitoring router (RF-03)', () => {
       });
     });
 
-    const res = await fetch(`${base}/requests/${id}`);
+    const res = await fetch(`${base}/requests/${id}`, { headers: JSON_HEADERS });
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.method).toBe('POST');
@@ -132,12 +151,12 @@ describe('monitoring router (RF-03)', () => {
       }
     });
 
-    const denied = await fetch(`${base}/metrics`);
+    const denied = await fetch(`${base}/metrics`, { headers: JSON_HEADERS });
     expect(denied.status).toBe(401);
 
     const login = await fetch(`${base}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...JSON_HEADERS },
       body: JSON.stringify({ username: 'admin', password: 'secret' })
     });
     expect(login.status).toBe(200);
@@ -145,7 +164,7 @@ describe('monitoring router (RF-03)', () => {
     expect(cookie).toContain('wm_monitor_session');
 
     const ok = await fetch(`${base}/metrics`, {
-      headers: { Cookie: cookie.split(';')[0] }
+      headers: { ...JSON_HEADERS, Cookie: cookie.split(';')[0] }
     });
     expect(ok.status).toBe(200);
     await close();

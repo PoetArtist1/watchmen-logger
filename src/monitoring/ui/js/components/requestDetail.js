@@ -1,5 +1,6 @@
 import {
   escapeHtml,
+  formatClientAddress,
   formatTime,
   methodClass,
   pairsFromObject,
@@ -44,7 +45,7 @@ export function renderRequestDetail(root, record, { onClose }) {
           <div class="kv"><span class="kv__k">Timestamp</span><span class="kv__v">${escapeHtml(formatTime(record.timestamp))}</span></div>
           <div class="kv"><span class="kv__k">Latency</span><span class="kv__v">${escapeHtml(record.latency_ms ?? 0)} ms</span></div>
           <div class="kv"><span class="kv__k">Response size</span><span class="kv__v">${escapeHtml(record.response_size_bytes ?? 0)} B</span></div>
-          <div class="kv"><span class="kv__k">Client IP</span><span class="kv__v mono">${escapeHtml(record.client_ip || '—')}</span></div>
+          <div class="kv"><span class="kv__k">Client</span><span class="kv__v mono">${escapeHtml(formatClientAddress(record.client_ip, record.client_port))}</span></div>
           <div class="kv"><span class="kv__k">User agent</span><span class="kv__v" style="font-size:.8rem">${escapeHtml(record.user_agent || '—')}</span></div>
         </div>
 
