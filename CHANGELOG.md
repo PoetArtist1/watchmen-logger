@@ -51,3 +51,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   con convenciones de ORMs. `store()` sigue funcionando pero emite un
   `console.warn` la primera vez que se invoca. Será eliminado en v1.0.0.
   Ver [MIGRATION.md](MIGRATION.md) para la guía de migración.
+
+## [0.2.0] - 2026-08-05
+
+### Added
+- **Gestor de Configuración**: Carga nativa de `.env`, lectura de `logger.config.json`, interpolación de variables `${VAR}` y validación al arranque.
+- **API de Logging Manual**: Métodos `logInfo`, `logWarning`, `logError` (con captura de *stack trace*) y `logDebug`.
+- **Utilidades Core**: Generación de UUIDs v4, formateador ISO 8601 y enmascaramiento recursivo de datos sensibles (`[REDACTED]`).
+- **Pruebas Unitarias**: Suites de tests para los módulos `utils`, `config` y `manualLogger`.
+
+### Changed
+- Actualizado el punto de entrada `src/index.js` para exponer `loadConfiguration` y la API de logging manual.

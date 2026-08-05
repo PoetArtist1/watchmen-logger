@@ -1,15 +1,6 @@
 /**
  * @module watchmen-logger
  * @description Main entry point for the watchmen-logger package.
- * Exports middleware, storage strategies, and the migration runner.
- *
- * @example
- * const { createCaptureMiddleware, StorageFactory } = require('watchmen-logger');
- *
- * const storage = StorageFactory.create({ strategy: 'sqlite', config: { database_path: './logs/app.db' } });
- * await storage.initialize();
- *
- * app.use(createCaptureMiddleware(storage, { excluded_paths: ['/health'] }));
  */
 
 const { createCaptureMiddleware } = require('./middleware');
@@ -21,6 +12,15 @@ const {
   PostgresStorage
 } = require('./storage');
 const { MigrationRunner } = require('./migrations');
+
+const { loadConfiguration } = require('./config');
+const { 
+  setStorageEngine, 
+  logInfo, 
+  logWarning, 
+  logError, 
+  logDebug 
+} = require('./utils/manualLogger');
 
 module.exports = {
   // Middleware
@@ -34,5 +34,15 @@ module.exports = {
   PostgresStorage,
 
   // Migrations
-  MigrationRunner
+  MigrationRunner,
+
+  // Gestor de Configuración (RF-06)
+  loadConfiguration,
+
+  // API de Logging Manual (RF-05)
+  setStorageEngine,
+  logInfo,
+  logWarning,
+  logError,
+  logDebug
 };
