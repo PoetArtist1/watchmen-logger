@@ -4,8 +4,19 @@ const {
   loadEnvVariables, 
   interpolateString, 
   validateConfig, 
-  loadConfiguration 
+  loadConfiguration,
+  DEFAULT_CONFIG
 } = require('../../src/config');
+
+// Helper: create a minimal valid config for David's strict validator
+function validConfig(overrides = {}) {
+  return {
+    storage: { strategy: 'memory', config: { max_records: 5000, cleanup_enabled: true, cleanup_interval_minutes: 10, cleanup_older_than_hours: 24 } },
+    capture: { ...DEFAULT_CONFIG.capture },
+    monitoring: { ...DEFAULT_CONFIG.monitoring },
+    ...overrides
+  };
+}
 
 describe('Gestor de Configuración (config/index.js)', () => {
   const originalEnv = process.env;
@@ -57,25 +68,32 @@ describe('Gestor de Configuración (config/index.js)', () => {
   });
 
   describe('validateConfig', () => {
-    it('debe pasar con una configuración válida', () => {
-      const validConfig = {
-        storage: { strategy: 'memory' }
-      };
-      expect(() => validateConfig(validConfig)).not.toThrow();
+    it('debe pasar con una configuración válida completa', () => {
+      const config = validConfig();
+      expect(() => validateConfig(config)).not.toThrow();
     });
 
-    it('debe fallar si falta storage.strategy', () => {
-      expect(() => validateConfig({ storage: {} })).toThrow(/Falta 'storage.strategy'/);
+    it('debe fallar si falta storage', () => {
+      const badConfig = validConfig();
+      delete badConfig.storage;
+      expect(() => validateConfig(badConfig)).toThrow(/storage/);
     });
 
     it('debe fallar con una estrategia no soportada', () => {
-      const invalidConfig = { storage: { strategy: 'mongodb' } };
-      expect(() => validateConfig(invalidConfig)).toThrow(/no es válida/);
+      const badConfig = validConfig({ storage: { strategy: 'mongodb' } });
+      expect(() => validateConfig(badConfig)).toThrow(/storage.strategy/);
     });
 
-    it('debe fallar si la estrategia es sqlite pero falta el path', () => {
-      const invalidSqlite = { storage: { strategy: 'sqlite', config: {} } };
-      expect(() => validateConfig(invalidSqlite)).toThrow(/requiere 'database_path'/);
+    it('debe fallar si falta capture', () => {
+      const badConfig = validConfig();
+      delete badConfig.capture;
+      expect(() => validateConfig(badConfig)).toThrow(/capture/);
+    });
+
+    it('debe fallar si falta monitoring', () => {
+      const badConfig = validConfig();
+      delete badConfig.monitoring;
+      expect(() => validateConfig(badConfig)).toThrow(/monitoring/);
     });
   });
 
@@ -94,9 +112,15 @@ describe('Gestor de Configuración (config/index.js)', () => {
               config: {
                 password: '${DB_PASS}',
                 port: '${PORT}',
-                ssl: 'true'
+                ssl: 'true',
+                host: 'localhost',
+                database: 'testdb',
+                user: 'admin',
+                pool_size: 10
               }
-            }
+            },
+            capture: DEFAULT_CONFIG.capture,
+            monitoring: DEFAULT_CONFIG.monitoring
           });
         }
         return '';

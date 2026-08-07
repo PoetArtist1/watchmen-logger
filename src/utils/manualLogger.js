@@ -1,4 +1,5 @@
-const { generateUUID, getISO8601Timestamp } = require('./index');
+const { generateUuid: generateUUID } = require('./uuid');
+const { nowISO8601: getISO8601Timestamp } = require('./dates');
 
 // Referencia a la estrategia de almacenamiento activa
 let activeStorage = null;
