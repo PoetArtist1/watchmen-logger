@@ -3,9 +3,11 @@
 > **Self-hosted logging & monitoring middleware for Express REST APIs.**
 > Middleware ligero, asíncrono y de cero dependencias externas de infraestructura. Diseñado como alternativa autónoma a Sentry / Datadog para aplicaciones Node.js.
 
+[![npm version](https://img.shields.io/npm/v/watchmen-logger.svg)](https://www.npmjs.com/package/watchmen-logger)
 [![Node.js](https://img.shields.io/badge/Node.js->=18.0.0-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-139%2B%20passing-brightgreen.svg)]()
-[![Coverage](https://img.shields.io/badge/Coverage->70%25-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-161%20passing-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage->91%25-brightgreen.svg)]()
 
 ---
 
@@ -23,34 +25,20 @@
 
 ---
 
-## 📦 Instalación y Uso Local
+## 📦 Instalación
 
-Actualmente el paquete se encuentra en desarrollo local. Puedes utilizarlo en tu proyecto de Node.js de dos formas:
+Puedes instalar el paquete directamente desde **NPM** en tu proyecto:
 
-### Opción 1: Importación Directa en el Repositorio
+```bash
+# Con NPM
+npm install watchmen-logger
 
-Si estás desarrollando la aplicación dentro del mismo proyecto:
+# Con pnpm
+pnpm add watchmen-logger
 
-```javascript
-const { createCaptureMiddleware, StorageFactory } = require('./src');
+# Con Yarn
+yarn add watchmen-logger
 ```
-
-### Opción 2: Enlace Local con `npm link`
-
-Para probar el paquete en otro proyecto local de tu máquina sin publicar en NPM:
-
-1. En la carpeta de `watchmen-logger`:
-   ```bash
-   npm link
-   ```
-2. En la carpeta de tu aplicación de Express:
-   ```bash
-   npm link watchmen-logger
-   ```
-3. Importar en tu aplicación:
-   ```javascript
-   const { createCaptureMiddleware, StorageFactory } = require('watchmen-logger');
-   ```
 
 ---
 
@@ -60,7 +48,7 @@ Para probar el paquete en otro proyecto local de tu máquina sin publicar en NPM
 
 ```javascript
 const express = require('express');
-const { createLogger } = require('watchmen-logger'); // o './src' en desarrollo local
+const { createLogger } = require('watchmen-logger');
 
 async function bootstrap() {
   const app = express();
@@ -71,9 +59,6 @@ async function bootstrap() {
 
   // Captura HTTP + monta la UI de monitoreo (RF-03)
   logger.attach(app);
-  // Equivalente:
-  // app.use(logger.middleware());
-  // app.use(logger.config.monitoring.endpoint, logger.monitoring());
 
   app.get('/api/users', async (req, res) => {
     await logger.logInfo('Listing users', { requestId: req.requestId });
@@ -92,11 +77,11 @@ bootstrap();
 Copia `logger.config.example.json` → `logger.config.json` y `.env.example` → `.env`.
 Los secretos van en `.env` y se referencian en el JSON como `${LOGGER_DB_PASSWORD}`.
 
-### Opción manual: StorageFactory + middleware
+### Opción manual: `StorageFactory` + `createCaptureMiddleware`
 
 ```javascript
 const express = require('express');
-const { createCaptureMiddleware, StorageFactory } = require('./src'); // O 'watchmen-logger' si usaste npm link
+const { createCaptureMiddleware, StorageFactory } = require('watchmen-logger');
 
 async function bootstrap() {
   const app = express();
@@ -134,14 +119,6 @@ bootstrap();
 
 El paquete incluye una SPA embebida (HTML/CSS/JS, sin build) servida bajo el endpoint configurado en `monitoring.endpoint` (por defecto `/api/monitoring`).
 
-### Demo local
-
-```bash
-npm install
-npm run demo
-# → http://localhost:3847/api/monitoring/
-```
-
 ### Endpoints
 
 | Ruta | Descripción |
@@ -154,24 +131,6 @@ npm run demo
 ### Dashboard
 
 Muestra total de requests, tasa/min, errores, uptime/latencia, gráficos de método/status/timeline, top endpoints, endpoints lentos y errores recientes (auto-refresh configurable y pausable).
-
-### Auth opcional
-
-En `logger.config.json`:
-
-```json
-"monitoring": {
-  "endpoint": "/api/monitoring",
-  "enabled": true,
-  "auto_refresh_interval": 30,
-  "auth": {
-    "enabled": true,
-    "username": "${LOGGER_MONITORING_USER}",
-    "password": "${LOGGER_MONITORING_PASSWORD}",
-    "session_timeout_hours": 1
-  }
-}
-```
 
 ---
 
@@ -214,7 +173,7 @@ Buffer circular FIFO ideal para pruebas y entornos de desarrollo sin dependencia
 const storage = StorageFactory.create({
   strategy: 'memory',
   config: {
-    max_records: 5000, // Máximo número de registros en RAM
+    max_records: 5000,
     cleanup_interval_minutes: 60
   }
 });

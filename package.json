@@ -1,6 +1,6 @@
 {
   "name": "watchmen-logger",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Self-hosted logging & monitoring middleware for REST APIs. Capture, store, and visualize HTTP requests with zero external dependencies.",
   "main": "src/index.js",
   "files": [
