@@ -1,9 +1,21 @@
 {
   "name": "watchmen-logger",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Self-hosted logging & monitoring middleware for REST APIs. Capture, store, and visualize HTTP requests with zero external dependencies.",
   "main": "src/index.js",
+  "files": [
+    "src/",
+    "logger.config.example.json",
+    ".env.example",
+    "README.md",
+    "CHANGELOG.md",
+    "MIGRATION.md",
+    "ARCHITECTURE.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "dev": "WATCHMEN_DEV=1 nodemon --watch src --watch examples --ext js,json,css,html,sql --exec node examples/demo-server.js",
+    "demo": "node examples/demo-server.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
@@ -15,7 +27,8 @@
     "rest-api",
     "express",
     "http-logger",
-    "dashboard"
+    "dashboard",
+    "sqlite"
   ],
   "author": "",
   "license": "MIT",
@@ -36,9 +49,10 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "vitest": "^3.0.0",
     "@vitest/coverage-v8": "^3.0.0",
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "nodemon": "^3.1.14",
+    "vitest": "^3.0.0"
   },
   "peerDependencies": {
     "express": ">=4.0.0"

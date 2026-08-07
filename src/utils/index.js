@@ -1,58 +1,48 @@
-const crypto = require('crypto');
-
 /**
- * Genera un identificador único UUID v4.
- * Requerido para etiquetar de forma única cada request y log manual.
- * 
- * @returns {string} UUID v4
+ * @module utils
+ * @description Shared utilities: UUID generation, ISO 8601 dates, sensitive-data masking,
+ * and manual logging API.
  */
-function generateUUID() {
-  // Utilizamos el método nativo de Node.js (disponible desde v15.6.0)
-  return crypto.randomUUID();
-}
 
-/**
- * Devuelve la fecha y hora actual en formato estándar ISO 8601.
- * 
- * @returns {string} Fecha en formato ISO 8601
- */
-function getISO8601Timestamp() {
-  return new Date().toISOString();
-}
+const { generateUuid } = require('./uuid');
+const { nowISO8601, toISO8601, isISO8601 } = require('./dates');
+const {
+  REDACTED,
+  DEFAULT_SENSITIVE_KEYS,
+  maskHeaders,
+  maskSensitiveData
+} = require('./mask');
+const {
+  setStorageEngine,
+  logInfo,
+  logWarning,
+  logError,
+  logDebug
+} = require('./manualLogger');
 
-/**
- * Enmascara valores sensibles en un objeto (ej. headers de una petición).
- * Reemplaza el valor de las claves coincidentes por '[REDACTED]'.
- * 
- * @param {Object} data - El objeto a procesar (ej. req.headers).
- * @param {string[]} sensitiveKeys - Lista de claves a ocultar (en minúsculas).
- * @returns {Object} Un nuevo objeto con los datos sensibles ocultos.
- */
-function maskSensitiveData(data, sensitiveKeys = ['authorization', 'cookie', 'set-cookie']) {
-  if (!data || typeof data !== 'object') {
-    return data;
-  }
-
-  // Creamos una copia superficial para no mutar el objeto original
-  const maskedData = { ...data };
-  
-  for (const key in maskedData) {
-    if (Object.prototype.hasOwnProperty.call(maskedData, key)) {
-      // Normalizamos la clave a minúsculas para una comparación segura
-      if (sensitiveKeys.includes(key.toLowerCase())) {
-        maskedData[key] = '[REDACTED]';
-      } else if (typeof maskedData[key] === 'object' && maskedData[key] !== null) {
-        // (Opcional) Llamada recursiva por si hay datos anidados sensibles en un body
-        maskedData[key] = maskSensitiveData(maskedData[key], sensitiveKeys);
-      }
-    }
-  }
-  
-  return maskedData;
-}
+// Mario's aliases for backward compatibility
+const generateUUID = generateUuid;
+const getISO8601Timestamp = nowISO8601;
 
 module.exports = {
+  // David's modular utils
+  generateUuid,
+  nowISO8601,
+  toISO8601,
+  isISO8601,
+  REDACTED,
+  DEFAULT_SENSITIVE_KEYS,
+  maskHeaders,
+  maskSensitiveData,
+
+  // Mario's manual logger
+  setStorageEngine,
+  logInfo,
+  logWarning,
+  logError,
+  logDebug,
+
+  // Aliases (Mario's naming convention)
   generateUUID,
-  getISO8601Timestamp,
-  maskSensitiveData
+  getISO8601Timestamp
 };

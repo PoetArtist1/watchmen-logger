@@ -1,13 +1,41 @@
+# Dependencies
 node_modules/
-coverage/
+
+# Secrets (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# Runtime data / local databases
+logs/
+*.log
 *.db
 *.db-wal
 *.db-shm
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
-*.log
-.env
-logs/
+
+# Coverage / build output
+coverage/
 dist/
+.nyc_output/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
+.idea/
+*.iml
+
+# Local scratch / demos
 example.js
+*.tmp
+
+# Playwright (Integrante 2 — UI component tests)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

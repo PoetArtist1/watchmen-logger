@@ -81,6 +81,7 @@ function createCaptureMiddleware(storage, captureConfig = {}) {
       path: req.path,
       full_url: `${req.protocol}://${req.get('host')}${req.originalUrl}`,
       client_ip: _getClientIp(req),
+      client_port: _getClientPort(req),
       user_agent: req.get('user-agent') || ''
     };
 
@@ -200,6 +201,23 @@ function _getClientIp(req) {
     return typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0];
   }
   return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+/**
+ * Extract the client TCP port (remote socket), or X-Forwarded-Port when proxied.
+ * @private
+ * @param {import('express').Request} req
+ * @returns {number|null}
+ */
+function _getClientPort(req) {
+  const forwardedPort = req.headers['x-forwarded-port'];
+  if (forwardedPort != null && forwardedPort !== '') {
+    const raw = Array.isArray(forwardedPort) ? forwardedPort[0] : String(forwardedPort).split(',')[0].trim();
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  const port = req.socket?.remotePort;
+  return typeof port === 'number' && port > 0 ? port : null;
 }
 
 /**

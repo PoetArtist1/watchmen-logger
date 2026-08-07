@@ -65,6 +65,7 @@ class SqliteStorage extends StorageStrategy {
 
     // Create tables
     this._createTables();
+    this._ensureClientPortColumn();
     this._createIndices();
     this._prepareStatements();
   }
@@ -85,6 +86,7 @@ class SqliteStorage extends StorageStrategy {
         status_code: record.status_code,
         latency_ms: record.latency_ms,
         client_ip: record.client_ip || null,
+        client_port: record.client_port != null ? Number(record.client_port) : null,
         user_agent: record.user_agent || null,
         request_headers: record.request_headers ? JSON.stringify(record.request_headers) : null,
         request_query: record.request_query ? JSON.stringify(record.request_query) : null,
@@ -146,9 +148,22 @@ class SqliteStorage extends StorageStrategy {
 
     if (filters.status_code) {
       const codes = Array.isArray(filters.status_code) ? filters.status_code : [filters.status_code];
-      const placeholders = codes.map((_, i) => `@status_${i}`);
-      conditions.push(`status_code IN (${placeholders.join(', ')})`);
-      codes.forEach((c, i) => { params[`status_${i}`] = Number(c); });
+      const parts = [];
+      codes.forEach((c, i) => {
+        const token = String(c).trim().toLowerCase();
+        if (/^[2-5]xx$/.test(token)) {
+          const base = Number(token[0]) * 100;
+          parts.push(`(status_code >= @status_min_${i} AND status_code <= @status_max_${i})`);
+          params[`status_min_${i}`] = base;
+          params[`status_max_${i}`] = base + 99;
+        } else {
+          parts.push(`status_code = @status_${i}`);
+          params[`status_${i}`] = Number(c);
+        }
+      });
+      if (parts.length) {
+        conditions.push(`(${parts.join(' OR ')})`);
+      }
     }
 
     if (filters.path) {
@@ -450,6 +465,17 @@ class SqliteStorage extends StorageStrategy {
   // ─── Private helpers ────────────────────────────────────────────────
 
   /**
+   * Ensure client_port exists on older SQLite databases created before this field.
+   * @private
+   */
+  _ensureClientPortColumn() {
+    const cols = this.db.prepare('PRAGMA table_info(requests)').all();
+    if (!cols.some((c) => c.name === 'client_port')) {
+      this.db.exec('ALTER TABLE requests ADD COLUMN client_port INTEGER');
+    }
+  }
+
+  /**
    * Create the requests and manual_logs tables.
    * @private
    */
@@ -464,6 +490,7 @@ class SqliteStorage extends StorageStrategy {
         status_code INTEGER NOT NULL,
         latency_ms INTEGER NOT NULL,
         client_ip VARCHAR(45),
+        client_port INTEGER,
         user_agent TEXT,
         request_headers TEXT,
         request_query TEXT,
@@ -515,11 +542,11 @@ class SqliteStorage extends StorageStrategy {
     this._statements.insertRequest = this.db.prepare(`
       INSERT INTO requests (
         request_id, timestamp, method, path, full_url, status_code, latency_ms,
-        client_ip, user_agent, request_headers, request_query, request_body,
+        client_ip, client_port, user_agent, request_headers, request_query, request_body,
         response_headers, response_body, response_size_bytes, error_message, stack_trace
       ) VALUES (
         @request_id, @timestamp, @method, @path, @full_url, @status_code, @latency_ms,
-        @client_ip, @user_agent, @request_headers, @request_query, @request_body,
+        @client_ip, @client_port, @user_agent, @request_headers, @request_query, @request_body,
         @response_headers, @response_body, @response_size_bytes, @error_message, @stack_trace
       )
     `);

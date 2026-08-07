@@ -407,9 +407,11 @@ class MemoryStorage extends StorageStrategy {
 
     if (filters.status_code) {
       const codes = Array.isArray(filters.status_code)
-        ? filters.status_code.map(Number)
-        : [Number(filters.status_code)];
-      result = result.filter(r => codes.includes(r.status_code));
+        ? filters.status_code
+        : [filters.status_code];
+      result = result.filter((r) =>
+        codes.some((code) => _matchesStatusCode(r.status_code, code))
+      );
     }
 
     if (filters.path) {
@@ -531,6 +533,21 @@ class MemoryStorage extends StorageStrategy {
       return { id: null, ts: null };
     }
   }
+}
+
+/**
+ * Match an HTTP status against a concrete code or a group like "4xx".
+ * @param {number} actual
+ * @param {string|number} filter
+ * @returns {boolean}
+ */
+function _matchesStatusCode(actual, filter) {
+  const token = String(filter).trim().toLowerCase();
+  if (/^[2-5]xx$/.test(token)) {
+    const base = Number(token[0]) * 100;
+    return actual >= base && actual < base + 100;
+  }
+  return actual === Number(token);
 }
 
 module.exports = MemoryStorage;
